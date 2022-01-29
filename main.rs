@@ -70,6 +70,57 @@ parse::<i32>().unwrap()
                                                           };
   
        let file_size = match arquivo.metadata(){
+              Ok(metadata)=>metadata.len(),
+              Err(e)=> panic!("Erro ao obter o tamanho do arquivo:{}",e),
+         };
+         
+         println!("Tamanho do arquivo:{} bytes",file_size);
+         println!(" Iniciando a busca binária...");
+         
+         let mut buf_reader = BufReader:: new(arquivo);
+         
+         let tamanho_linha = 300;
+         let mut inicio: u64 = 0;
+         //Inicio da sessão de busca pelo CEP
+         let mut fim:u64 = file_size / tamanho_linha; //Fim da sessão de busca pelo CEP
+         while inicio<fim {
+                let meio: u64 = (inicio+fim)/2;//meio da seesão de busca pelo CEP
+                buf_reader
+                .seek(SeekFtom::Start(meio*tamanho_linha))
+                .unwrap();
+                
+                let mut bytes=[0;300];
+                match buf_reader.read(&mut bytes){
+                       Ok(300)=>{
+                              let cep_atual: Cep= unsafe{mem::transmute(bytes)};
+                              //Isso deve converter os bytes no número do Cep
+                              let valor=cep_atual.get_cep_value();
+                              if valor==cep{
+                                     println!("CEP encontrado!");
+                                     println!("{}", cep_atual);
+                                     return;
+                              }else if valor>cep{
+                                      fim=meio;
+                              }else {
+                                     inicio=meio+1;
+                              }
+                       }
+                       Ok(0)=> break,
+                       Err(e)=>panic!("Erro ao ler o arquivo:{}",e),
+                       _=>panic!("Erro desconhecido"),
+                };
+         }
+         println!("Cep não encontrado!");
+       }
+         
+                
+                
+         
+         
+        
+        
+                    
+              
              
   
   
